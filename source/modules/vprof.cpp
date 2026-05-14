@@ -354,6 +354,46 @@ static void* hook_CScriptedEntity_CallFunction(void* funky_srv, int pool)
 	return detour_CScriptedEntity_CallFunction.GetTrampoline<Symbols::CScriptedEntity_CallFunction>()(funky_srv, pool);
 }
 
+std::map<std::string, std::string> CallFunctionProtected_ids;  // key -> short id
+std::map<std::string, std::string> CallFunctionProtected_labels; // short id -> full label
+static int cfp_counter = 0;
+static Detouring::Hook detour_CLuaInterface_CallFunctionProtected;
+static void* hook_CLuaInterface_CallFunctionProtected(void* self, int iArgs, int iRets, bool bShowError)
+{
+	if (!g_Lua)
+		return detour_CLuaInterface_CallFunctionProtected.GetTrampoline<Symbols::CLuaInterface_CallFunctionProtected>()(self, iArgs, iRets, bShowError);
+
+	lua_Debug ar = {};
+	g_Lua->Push(-(iArgs + 1));
+	g_Lua->GetInfo(">Sn", &ar);
+
+	std::string key(ar.short_src);
+	key += ":";
+	key += std::to_string(ar.linedefined);
+
+	auto it = CallFunctionProtected_ids.find(key);
+	if (it == CallFunctionProtected_ids.end())
+	{
+		const char* src = ar.short_src[0] ? ar.short_src : "?";
+		if (strncmp(src, "addons/", 7) == 0)
+			src += 7;
+		char id[16];
+		snprintf(id, sizeof(id), "LUA#%04d", cfp_counter++);
+		std::string full = "CLuaInterface::CallFunctionProtected(";
+		full += src;
+		full += ":";
+		full += (ar.linedefined > 0) ? std::to_string(ar.linedefined) : "?";
+		full += ")";
+		CallFunctionProtected_ids[key] = id;
+		CallFunctionProtected_labels[id] = std::move(full);
+		it = CallFunctionProtected_ids.find(key);
+	}
+
+	VPROF_BUDGET( it->second.c_str(), "GMOD" );
+
+	return detour_CLuaInterface_CallFunctionProtected.GetTrampoline<Symbols::CLuaInterface_CallFunctionProtected>()(self, iArgs, iRets, bShowError);
+}
+
 #if SYSTEM_WINDOWS
 DETOUR_THISCALL_START()
 	DETOUR_THISCALL_ADDFUNC3( hook_CVProfile_OutputReport, OutputReport, void*, int, const tchar*, int );
@@ -362,6 +402,8 @@ DETOUR_THISCALL_START()
 	DETOUR_THISCALL_ADDRETFUNC1( hook_CLuaGamemode_CallFinish, void*, CallFinish, void*, int );
 	DETOUR_THISCALL_ADDRETFUNC1( hook_CLuaGamemode_Call, void*, CallInt, void*, int );
 	DETOUR_THISCALL_ADDRETFUNC1( hook_CLuaGamemode_CallStr, void*, CallStr, void*, const char* );
+	DETOUR_THISCALL_ADDRETFUNC3( hook_CLuaInterface_CallFunctionProtected, void*, CallFunctionProtected, void*, int, int, bool );
+
 	DETOUR_THISCALL_ADDRETFUNC1( hook_CScriptedEntity_StartFunctionStr, void*, StartFunctionStr, void*, const char* );
 	DETOUR_THISCALL_ADDRETFUNC1( hook_CScriptedEntity_StartFunction, void*, StartFunctionInt, void*, int );
 	DETOUR_THISCALL_ADDRETFUNC2( hook_CScriptedEntity_Call, void*, ScriptedCall, void*, int, int );
@@ -493,6 +535,13 @@ void CVProfModule::InitDetour(bool bPreServer)
 		&detour_CScriptedEntity_CallFunction, "CScriptedEntity::CallFunction(int)",
 		server_loader.GetModule(), Symbols::CScriptedEntity_CallFunctionSym,
 		(void*)DETOUR_THISCALL( hook_CScriptedEntity_CallFunction, CallFunctionInt ), m_pID
+	);
+
+	SourceSDK::ModuleLoader lua_shared_loader("lua_shared");
+	Detour::Create(
+		&detour_CLuaInterface_CallFunctionProtected, "CLuaInterface::CallFunctionProtected",
+		lua_shared_loader.GetModule(), Symbols::CLuaInterface_CallFunctionProtectedSym,
+		(void*)DETOUR_THISCALL( hook_CLuaInterface_CallFunctionProtected, CallFunctionProtected ), m_pID
 	);
 
 #if defined(ARCHITECTURE_X86) && 0

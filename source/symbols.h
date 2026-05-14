@@ -450,6 +450,9 @@ namespace Symbols
 	using CScriptedEntity_CallFunction = void* (GMCOMMON_CALLING_CONVENTION*)(void*, int);
 	extern const std::vector<Symbol> CScriptedEntity_CallFunctionSym;
 
+	using CLuaInterface_CallFunctionProtected = void* (GMCOMMON_CALLING_CONVENTION*)(void*, int, int, bool);
+	extern const std::vector<Symbol> CLuaInterface_CallFunctionProtectedSym;
+
 	using lj_BC_FUNCC = void* (GMCOMMON_CALLING_CONVENTION*)(void* idk);
 	extern const std::vector<Symbol> lj_BC_FUNCCSym;
 

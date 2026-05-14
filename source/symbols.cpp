@@ -532,6 +532,13 @@ namespace Symbols
 		Symbol::FromSignature("\x48\x89\x5C\x24\x08\x57\x48\x83\xEC\x20\x80\x79\x08\x00\x8B\xFA") // 48 89 5C 24 08 57 48 83 EC 20 80 79 08 00 8B FA
 	};
 
+	const std::vector<Symbol> CLuaInterface_CallFunctionProtectedSym = { // CLuaInterface::CallFunctionProtected
+		Symbol::FromName("_ZN13CLuaInterface21CallFunctionProtectedEiib"),
+		Symbol::FromSignature("\x55\x48\x89\xE5\x41\x57\x41\x56\x41\x89\xF6\x41\x55\x41\x54\x53\x48\x89\xFB\x48\x83\xEC\x58"), //55 48 89 E5 41 57 41 56 41 89 F6 41 55 41 54 53 48 89 FB 48 83 EC 58
+		Symbol::FromSignature("\x55\x8B\xEC\x83\xEC\x4C"), //  55 8B EC 83 EC 4C
+		Symbol::FromSignature("\x48\x89\x5C\x24\x18\x48\x89\x6C\x24\x20\x56\x57\x41\x54\x41\x56\x41\x57\x48\x81\xEC\x90\x00\x00\x00"), //  48 89 5C 24 18 48 89 6C 24 20 56 57 41 54 41 56 41 57 48 81 EC 90 00 00 00
+	};
+
 	const std::vector<Symbol> lj_BC_FUNCCSym = {
 		Symbol::FromSignature("\x8B\x6A\xF8\x8B\x7D\x14\x8B\x6C\x24\x30\x8D\x44\xC2\xF8\x89\x55\x10\x8D\x88\xA0\x00\x00\x00\x3B\x4D\x18\x89\x45\x14\x89\x2C\x24"), // 8B 6A F8 8B 7D 14 8B 6C 24 30 8D 44 C2 F8 89 55 10 8D 88 A0 00 00 00 3B 4D 18 89 45 14 89 2C 24
 	};
